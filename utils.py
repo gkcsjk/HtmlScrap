@@ -3,7 +3,11 @@ import requests
 import random
 import csv
 
+# proxy url
+# You may use other proxy resources, but need to change get_ip_list()
 url = 'https://free-proxy-list.net/'
+
+# Define the http request headers
 headers = {
     'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36',
     'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
@@ -14,6 +18,7 @@ headers = {
 }
 
 
+# get ip list from proxies_ip.csv
 def get_ip_list_temp():
     ip_list = []
     with open("proxies_ip.csv") as proxies_file:
@@ -23,6 +28,7 @@ def get_ip_list_temp():
     return ip_list
 
 
+# get ip list from url
 def get_ip_list(url, headers):
     web_data = requests.get(url, headers=headers)
     soup = BeautifulSoup(web_data.text, 'lxml')
@@ -37,6 +43,7 @@ def get_ip_list(url, headers):
     return ip_list
 
 
+# get a random ip from ip list
 def get_random_ip(ip_list):
     proxy_list = []
     for ip in ip_list:

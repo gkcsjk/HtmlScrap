@@ -1,15 +1,32 @@
 # coding:utf-8
+
+"""
+This script should work with utils.py and proxies_ip.csv
+This is just a example and will only work at hotfrog.com.au
+You need to check the source code of your target website and test their
+protection mechanism to determine how to retrieve information from it.
+"""
 import urllib3
 import requests
 import utils
+import time
 from bs4 import BeautifulSoup
 
+# urllib3 settings
 http = urllib3.PoolManager()
 urllib3.disable_warnings()
+
+
+# get the proxies ip with two methods
+
+# method 1: get proxy IPs directly from https://free-proxy-list.net/
 # proxies_pool = utils.get_ip_list(utils.url, headers=utils.headers)
+
+# method 2: get IPs from proxies_ip.csv (need to be type-in/copy-paste manually)
 proxies_pool = utils.get_ip_list_temp()
 
 
+# read from hotfrog.csv
 def read_by_lines(proxies_loc):
     with open("hotfrog.csv") as ip:
         line = ip.readline()
@@ -17,13 +34,19 @@ def read_by_lines(proxies_loc):
         while line:
             current_line = line
             line = ip.readline()
+
+            # the line with a file name starts with "000"
             if current_line[0:3] == "000":
                 filename = str(current_line[4:]).rstrip() + '.csv'
                 print(filename)
                 continue
+
+            # the line with urls
             else:
-                url = current_line.rstrip()
-                results, proxies_loc = process_url(url, proxies_loc)
+                url = current_line.rstrip()  # remove '\n' or other useless chars.
+                results, proxies_loc = process_url(url, proxies_loc)  # process the url
+
+                # after get the results, write them into the file
                 try:
                     utils.write_url(filename, results, fieldnames)
                 except IOError:
@@ -31,14 +54,18 @@ def read_by_lines(proxies_loc):
                 print(filename + ' ' + url)
 
 
+# process the url
 def process_url(url_loc, proxies_loc):
     print(url_loc)
     results = []
+
+    # If we use proxies
+    # (not in this case, because it will ask for a robot check if the ip is not fro Au)
     if proxies_loc is not False:
         while True:
             try:
                 print("Uss proxy:", proxies_loc)
-                page = requests.get(url_loc, proxies=proxies_loc, headers=utils.headers)
+                page = requests.get(url_loc, proxies=proxies_loc, headers=utils.headers, timeout=3)
                 if page.status_code != 200:
                     print(page.status_code)
                     proxies_loc = proxy_test(url_loc)
@@ -47,10 +74,27 @@ def process_url(url_loc, proxies_loc):
             except Exception:
                 print("Proxy cannot be connected, change to another proxy...")
                 proxies_loc = proxy_test(url_loc)
+
+    # If we do NOT use proxies
     else:
-        page = requests.get(url_loc, headers=utils.headers)
+        while True:
+            try:
+                page = requests.get(url_loc, headers=utils.headers, timeout=3)
+                break
+            except Exception:
+                print("Connection error. trying again...")
+                time.sleep(5)
+                continue
+
+    # get the page content using beautiful soup
     soup = BeautifulSoup(page.text, 'html.parser')
+
+    # find all <div>s with class "tile-content" into a list
     data_list = soup.find_all("div", class_="tile-content")
+
+    # for each <div> in the list, we get information from it
+    # in this case, we need to go through its child page to get required information
+    # So we get the its child link call method "process_sub_url()"
     for data_block in data_list:
         result = {}
         company_name = data_block.find("a")
@@ -69,8 +113,33 @@ def process_url(url_loc, proxies_loc):
     return results, proxies_loc
 
 
+# process the child link
 def process_sub_url(url_loc):
-    page = requests.get(url_loc, headers = utils.headers)
+    # in the case that proxy is used, we need to handle the proxy here as well
+    # for example:
+    # def process_sub_url(url_loc, proxies_loc):
+    # if proxies_loc is not False:
+    #     while True:
+    #         try:
+    #             print("Uss proxy:", proxies_loc)
+    #             page = requests.get(url_loc, proxies=proxies_loc, headers=utils.headers, timeout=3)
+    #             if page.status_code != 200:
+    #                 print(page.status_code)
+    #                 proxies_loc = proxy_test(url_loc)
+    #                 continue
+    #             break
+    #         except Exception:
+    #             print("Proxy cannot be connected, change to another proxy...")
+    #             proxies_loc = proxy_test(url_loc)
+
+    while True:
+        try:
+            page = requests.get(url_loc, headers=utils.headers, timeout=3)
+            break
+        except Exception:
+            print("connection error, trying again...")
+            time.sleep(5)
+            continue
     soup = BeautifulSoup(page.text, 'html.parser')
     contact = soup.find('div', class_='company-contact-info')
 
@@ -136,7 +205,11 @@ def proxy_test(url_loc):
 
 
 if __name__ == '__main__':
+
+    # the fields needed in result csv file
     fieldnames = ['Name', 'Address', 'State', 'Tel', 'Website']
+
+    # if we are going to use proxy
     if_proxies = False
     if if_proxies is True:
         proxies = utils.get_random_ip(proxies_pool)
