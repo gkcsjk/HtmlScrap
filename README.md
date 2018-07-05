@@ -19,6 +19,7 @@ You need to config your python environment before getting data.
 ```
 https://virtualenv.pypa.io/en/stable/
 ```
+[Here](https://gist.github.com/pandafulmanda/730a9355e088a9970b18275cb9eadef3) is Python 3 virtualenv setting up on Mac.
 * Python 3.6 with pip should be installed. 
 * Please refer to ```requirements.txt```. To install all requirements:
 ```
