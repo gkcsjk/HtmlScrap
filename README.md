@@ -63,6 +63,7 @@ You can search for proxies on the internet and copy&paste them into ```proxies_i
 127.0.0.1:9999      #ip:port
 ...
 ```
+[This website](http://free-proxy.cz/en/) can filter ips by countries and alos can order the ips by speed/uptime/reponse. It can also export the ip list so that you can copy them to your ```proxies_ip.csv```.
 #### Get proxies from websites automatically
 In ```util.py```, I gave a example to dynamically get proxies from [Free Proxy List](https://free-proxy-list.net/).
 The way to get proxies from websites is still HTML scrap. For example:
